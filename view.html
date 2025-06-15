@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>📄 메모 보기</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .note-box {
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 5px;
+      white-space: pre-wrap;
+    }
+    button { padding: 8px 12px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>📄 메모 상세</h2>
+  <div id="note" class="note-box">불러오는 중...</div>
+  <button onclick="location.href='index.html'">← 목록으로</button>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const id = params.get("id");
+    const notes = JSON.parse(localStorage.getItem("noteList")) || [];
+    const note = notes.find(n => n.id === id);
+
+    const noteElem = document.getElementById("note");
+    if (note) {
+      noteElem.innerHTML = "<strong>작성일:</strong> " + note.timestamp + "<br><br>" + note.content;
+    } else {
+      noteElem.textContent = "해당 메모를 찾을 수 없습니다.";
+    }
+  </script>
+</body>
+</html>
