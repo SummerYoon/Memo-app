@@ -11,12 +11,22 @@
       padding: 15px;
       border-radius: 5px;
       white-space: pre-wrap;
+      margin-bottom: 10px;
     }
-    button { padding: 8px 12px; margin-top: 20px; }
+    .meta {
+      color: gray;
+      font-size: 0.9em;
+      margin-bottom: 15px;
+    }
+    button {
+      padding: 8px 12px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
   <h2>📄 메모 상세</h2>
+  <div id="meta" class="meta"></div>
   <div id="note" class="note-box">불러오는 중...</div>
   <button onclick="location.href='index.html'">← 목록으로</button>
 
@@ -27,8 +37,12 @@
     const note = notes.find(n => n.id === id);
 
     const noteElem = document.getElementById("note");
+    const metaElem = document.getElementById("meta");
+
     if (note) {
-      noteElem.innerHTML = "<strong>작성일:</strong> " + note.timestamp + "<br><br>" + note.content;
+      metaElem.innerHTML = "<strong>작성일:</strong> " + note.timestamp +
+        (note.updated ? "<br><strong>수정일:</strong> " + note.updated : "");
+      noteElem.textContent = note.content;
     } else {
       noteElem.textContent = "해당 메모를 찾을 수 없습니다.";
     }

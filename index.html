@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>📋 메모 목록 + 백업 및 id 자동화</title>
+  <title>📋 메모 목록 - 풀버전</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body { font-family: sans-serif; padding: 20px; }
@@ -12,6 +12,12 @@
       border: 1px solid #ccc;
       margin-bottom: 8px;
       border-radius: 5px;
+      position: relative;
+    }
+    li small {
+      color: gray;
+      display: block;
+      margin-top: 4px;
     }
     a { text-decoration: none; color: black; display: block; }
     a:hover { background-color: #f0f0f0; }
@@ -19,21 +25,31 @@
       padding: 8px 12px;
       margin: 5px 5px 10px 0;
     }
-    textarea {
+    textarea, input[type="file"], input[type="text"] {
+      margin-top: 10px;
       width: 100%;
-      height: 100px;
+    }
+    .note-controls {
+      margin-top: 8px;
+    }
+    .note-controls button {
+      margin-right: 6px;
     }
   </style>
 </head>
 <body>
   <h2>📋 저장된 메모 목록</h2>
   <button onclick="location.href='write.html'">➕ 새 메모 작성</button>
-  <button onclick="backupNotes()">🔄 백업</button>
-  <button onclick="toggleRestore()">📥 불러오기</button>
+  <button onclick="backupNotes()">🔄 백업 (파일 다운로드)</button>
+  <button onclick="toggleRestore()">📥 복원 (파일 업로드)</button>
+
+  <p id="lastBackup" style="color: gray; margin-top: 10px;"></p>
+
+  <input type="text" id="searchInput" placeholder="날짜(YYYY-MM-DD) 또는 키워드 검색" oninput="renderNoteList()" />
 
   <div id="restoreBox" style="display:none;">
-    <textarea id="restoreData" placeholder="백업한 데이터를 붙여넣으세요"></textarea><br>
-    <button onclick="restoreNotes()">복원 실행</button>
+    <input type="file" id="fileInput" accept=".json" /><br>
+    <button onclick="uploadAndRestore()">복원 실행</button>
   </div>
 
   <ul id="noteList"></ul>
@@ -43,40 +59,42 @@
       return JSON.parse(localStorage.getItem("noteList")) || [];
     }
 
-    function ensureNoteIDs() {
+    function ensureNoteIDsAndSave() {
       let notes = getNotes();
       let changed = false;
-
       notes.forEach(note => {
         if (!note.id) {
           note.id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
           changed = true;
         }
       });
-
       if (changed) {
         localStorage.setItem("noteList", JSON.stringify(notes));
-        alert("✅ 이전 메모가 새 버전에 맞게 자동 변환되었습니다!");
+        alert("✅ 기존 메모들이 새 구조로 변환되었습니다. 페이지를 새로고침합니다!");
+        location.reload();
       }
     }
 
-    function renderNoteList() {
-      const noteListElem = document.getElementById("noteList");
-      noteListElem.innerHTML = "";
-      const notes = getNotes();
-      notes.forEach(note => {
-        const li = document.createElement("li");
-        const link = document.createElement("a");
-        link.href = "view.html?id=" + note.id;
-        link.textContent = note.timestamp + " - " + note.content.slice(0, 20) + "...";
-        li.appendChild(link);
-        noteListElem.appendChild(li);
-      });
+    function formatDate(d) {
+      return d.toISOString().split('T')[0] + "_" + d.toTimeString().split(' ')[0].replace(/:/g, "-");
     }
 
     function backupNotes() {
-      const data = localStorage.getItem("noteList");
-      prompt("👇 아래 내용을 복사해 안전한 곳에 저장하세요!", data);
+      const notes = getNotes();
+      const data = JSON.stringify(notes, null, 2);
+      const now = new Date();
+      const filename = "memo-backup-" + formatDate(now) + ".json";
+
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      localStorage.setItem("lastBackupDate", now.toLocaleString());
+      renderLastBackup();
     }
 
     function toggleRestore() {
@@ -84,24 +102,103 @@
       box.style.display = box.style.display === "none" ? "block" : "none";
     }
 
-    function restoreNotes() {
-      const data = document.getElementById("restoreData").value.trim();
-      try {
-        const parsed = JSON.parse(data);
-        if (Array.isArray(parsed)) {
-          localStorage.setItem("noteList", JSON.stringify(parsed));
-          alert("복원 완료!");
-          location.reload();
-        } else {
-          alert("유효한 메모 데이터가 아닙니다.");
+    function uploadAndRestore() {
+      const fileInput = document.getElementById("fileInput");
+      const file = fileInput.files[0];
+      if (!file) {
+        alert("파일을 선택해주세요.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (Array.isArray(parsed)) {
+            localStorage.setItem("noteList", JSON.stringify(parsed));
+            localStorage.setItem("lastBackupDate", new Date().toLocaleString());
+            alert("복원 완료!");
+            location.reload();
+          } else {
+            alert("유효한 메모 데이터가 아닙니다.");
+          }
+        } catch {
+          alert("JSON 형식이 잘못되었습니다.");
         }
-      } catch {
-        alert("JSON 형식이 잘못되었습니다.");
+      };
+      reader.readAsText(file);
+    }
+
+    function renderLastBackup() {
+      const lastBackup = localStorage.getItem("lastBackupDate");
+      document.getElementById("lastBackup").textContent = lastBackup
+        ? "📁 마지막 백업 날짜: " + lastBackup
+        : "";
+    }
+
+    function renderNoteList() {
+      const keyword = document.getElementById("searchInput").value.toLowerCase();
+      const noteListElem = document.getElementById("noteList");
+      noteListElem.innerHTML = "";
+      const notes = getNotes();
+
+      notes.forEach(note => {
+        const searchTarget = (note.content + " " + note.timestamp + " " + (note.updated || "")).toLowerCase();
+        if (!keyword || searchTarget.includes(keyword)) {
+          const li = document.createElement("li");
+          const link = document.createElement("a");
+          link.href = "view.html?id=" + note.id;
+          link.textContent = note.timestamp + " - " + note.content.slice(0, 20) + "...";
+          li.appendChild(link);
+
+          if (note.updated) {
+            const updated = document.createElement("small");
+            updated.textContent = "✏️ 수정됨: " + note.updated;
+            li.appendChild(updated);
+          }
+
+          const controls = document.createElement("div");
+          controls.className = "note-controls";
+
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "🗑 삭제";
+          delBtn.onclick = () => deleteNote(note.id);
+
+          const editBtn = document.createElement("button");
+          editBtn.textContent = "✏️ 수정";
+          editBtn.onclick = () => editNote(note.id);
+
+          controls.appendChild(editBtn);
+          controls.appendChild(delBtn);
+          li.appendChild(controls);
+
+          noteListElem.appendChild(li);
+        }
+      });
+    }
+
+    function deleteNote(id) {
+      if (!confirm("정말로 삭제하시겠습니까?")) return;
+      let notes = getNotes();
+      notes = notes.filter(note => note.id !== id);
+      localStorage.setItem("noteList", JSON.stringify(notes));
+      renderNoteList();
+    }
+
+    function editNote(id) {
+      const newContent = prompt("수정할 내용을 입력하세요:");
+      if (!newContent) return;
+      let notes = getNotes();
+      const note = notes.find(n => n.id === id);
+      if (note) {
+        note.content = newContent;
+        note.updated = new Date().toLocaleString();
+        localStorage.setItem("noteList", JSON.stringify(notes));
+        renderNoteList();
       }
     }
 
-    // 실행
-    ensureNoteIDs();
+    ensureNoteIDsAndSave();
+    renderLastBackup();
     renderNoteList();
   </script>
 </body>
