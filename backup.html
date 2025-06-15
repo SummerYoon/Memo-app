@@ -44,7 +44,7 @@
 
   <textarea id="backupArea" readonly></textarea>
   <button onclick="copyToClipboard()">📋 복사하기</button>
-  <button onclick="downloadBackup()">💾 파일로 저장</button>
+  <button onclick="openNewTab()">🧾 새 탭으로 보기</button>
   <p id="lastBackup"></p>
 
   <script>
@@ -65,14 +65,14 @@
       alert("복사되었습니다. 공유 > 파일에 저장을 눌러주세요.");
     }
 
-    function downloadBackup() {
-      const blob = new Blob([json], {{ type: "application/json" }});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
+    function openNewTab() {
+      const win = window.open();
+      win.document.write(
+        '<h2>📄 메모 백업 데이터</h2>' +
+        '<p style="font-size:0.95em;">공유 버튼 → 파일에 저장하세요. 파일명: <code>' + filename + '</code></p>' +
+        '<pre>' + json.replace(/</g, '&lt;') + '</pre>'
+      );
+      win.document.title = filename;
     }
   </script>
 </body>
