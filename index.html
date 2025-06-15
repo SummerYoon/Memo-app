@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>📋 메모 목록</title>
+  <title>📋 메모 목록 + 백업 기능</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body { font-family: sans-serif; padding: 20px; }
@@ -17,27 +17,73 @@
     a:hover { background-color: #f0f0f0; }
     button {
       padding: 8px 12px;
-      margin-bottom: 20px;
+      margin: 5px 5px 10px 0;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
     }
   </style>
 </head>
 <body>
   <h2>📋 저장된 메모 목록</h2>
   <button onclick="location.href='write.html'">➕ 새 메모 작성</button>
+  <button onclick="backupNotes()">🔄 백업</button>
+  <button onclick="toggleRestore()">📥 불러오기</button>
+
+  <div id="restoreBox" style="display:none;">
+    <textarea id="restoreData" placeholder="백업한 데이터를 붙여넣으세요"></textarea><br>
+    <button onclick="restoreNotes()">복원 실행</button>
+  </div>
+
   <ul id="noteList"></ul>
 
   <script>
-    const notes = JSON.parse(localStorage.getItem("noteList")) || [];
-    const noteListElem = document.getElementById("noteList");
+    function getNotes() {
+      return JSON.parse(localStorage.getItem("noteList")) || [];
+    }
 
-    notes.forEach((note, index) => {
-      const li = document.createElement("li");
-      const link = document.createElement("a");
-      link.href = "view.html?id=" + note.id;
-      link.textContent = note.timestamp + " - " + note.content.slice(0, 20) + "...";
-      li.appendChild(link);
-      noteListElem.appendChild(li);
-    });
+    function renderNoteList() {
+      const noteListElem = document.getElementById("noteList");
+      noteListElem.innerHTML = "";
+      const notes = getNotes();
+      notes.forEach(note => {
+        const li = document.createElement("li");
+        const link = document.createElement("a");
+        link.href = "view.html?id=" + note.id;
+        link.textContent = note.timestamp + " - " + note.content.slice(0, 20) + "...";
+        li.appendChild(link);
+        noteListElem.appendChild(li);
+      });
+    }
+
+    function backupNotes() {
+      const data = localStorage.getItem("noteList");
+      prompt("👇 아래 내용을 복사해 안전한 곳에 저장하세요!", data);
+    }
+
+    function toggleRestore() {
+      const box = document.getElementById("restoreBox");
+      box.style.display = box.style.display === "none" ? "block" : "none";
+    }
+
+    function restoreNotes() {
+      const data = document.getElementById("restoreData").value.trim();
+      try {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed)) {
+          localStorage.setItem("noteList", JSON.stringify(parsed));
+          alert("복원 완료!");
+          location.reload();
+        } else {
+          alert("유효한 메모 데이터가 아닙니다.");
+        }
+      } catch {
+        alert("JSON 형식이 잘못되었습니다.");
+      }
+    }
+
+    renderNoteList();
   </script>
 </body>
 </html>
