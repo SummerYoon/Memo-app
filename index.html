@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>📋 메모 목록 + 백업 기능</title>
+  <title>📋 메모 목록 + 백업 및 id 자동화</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body { font-family: sans-serif; padding: 20px; }
@@ -41,6 +41,23 @@
   <script>
     function getNotes() {
       return JSON.parse(localStorage.getItem("noteList")) || [];
+    }
+
+    function ensureNoteIDs() {
+      let notes = getNotes();
+      let changed = false;
+
+      notes.forEach(note => {
+        if (!note.id) {
+          note.id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+          changed = true;
+        }
+      });
+
+      if (changed) {
+        localStorage.setItem("noteList", JSON.stringify(notes));
+        alert("✅ 이전 메모가 새 버전에 맞게 자동 변환되었습니다!");
+      }
     }
 
     function renderNoteList() {
@@ -83,6 +100,8 @@
       }
     }
 
+    // 실행
+    ensureNoteIDs();
     renderNoteList();
   </script>
 </body>
