@@ -204,6 +204,34 @@
       }
     }
 
+    
+// ⏰ 매주 일요일 오후 7:35에만 백업 유도
+const now = new Date();
+if (now.getDay() === 0 && now.getHours() === 19 && now.getMinutes() === 35) {
+  const lastPrompt = localStorage.getItem("lastBackupPrompt") || "";
+  const todayStr = now.toISOString().split("T")[0];
+  if (lastPrompt !== todayStr) {
+    const confirmBackup = confirm("📦 이번 주 백업을 하시겠어요?");
+    if (confirmBackup) {
+      backupToNewTab();
+    }
+    localStorage.setItem("lastBackupPrompt", todayStr);
+  }
+}
+
+    const today = new Date();
+    if (today.getDay() === 0) {
+      const lastPrompt = localStorage.getItem("lastBackupPrompt") || "";
+      const todayStr = today.toISOString().split("T")[0];
+      if (lastPrompt !== todayStr) {
+        const confirmBackup = confirm("📦 이번 주 백업을 하시겠어요?");
+        if (confirmBackup) {
+          backupToNewTab();
+        }
+        localStorage.setItem("lastBackupPrompt", todayStr);
+      }
+    }
+
     ensureNoteIDsAndSave();
     renderLastBackup();
     renderNoteList();
