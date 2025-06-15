@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>나만의 메모앱</title>
+</head>
+<body style="font-family: sans-serif; padding: 20px;">
+  <h2>📝 나만의 메모장</h2>
+  <textarea id="note" rows="10" style="width: 100%;"></textarea>
+  <br><br>
+  <button onclick="saveNote()">저장</button>
+
+  <script>
+    const textarea = document.getElementById('note');
+
+    // 저장된 내용 불러오기
+    window.onload = () => {
+      const saved = localStorage.getItem('mynote');
+      if (saved) textarea.value = saved;
+    };
+
+    function saveNote() {
+      localStorage.setItem('mynote', textarea.value);
+      alert("메모가 저장되었어요!");
+    }
+  </script>
+</body>
+</html>
