@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>📋 메모 목록 - 풀버전</title>
+  <title>📋 메모 목록 - iOS 백업 호환</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body { font-family: sans-serif; padding: 20px; }
@@ -14,38 +14,33 @@
       border-radius: 5px;
       position: relative;
     }
-    li small {
-      color: gray;
-      display: block;
-      margin-top: 4px;
-    }
     a { text-decoration: none; color: black; display: block; }
     a:hover { background-color: #f0f0f0; }
     button {
       padding: 8px 12px;
       margin: 5px 5px 10px 0;
     }
-    textarea, input[type="file"], input[type="text"] {
-      margin-top: 10px;
+    input[type="text"], input[type="file"] {
       width: 100%;
-    }
-    .note-controls {
-      margin-top: 8px;
+      margin-top: 10px;
     }
     .note-controls button {
       margin-right: 6px;
+    }
+    #lastBackup {
+      color: gray;
+      font-size: 0.9em;
     }
   </style>
 </head>
 <body>
   <h2>📋 저장된 메모 목록</h2>
   <button onclick="location.href='write.html'">➕ 새 메모 작성</button>
-  <button onclick="backupNotes()">🔄 백업 (파일 다운로드)</button>
+  <button onclick="backupToNewTab()">🔄 백업 (iOS 호환)</button>
   <button onclick="toggleRestore()">📥 복원 (파일 업로드)</button>
 
-  <p id="lastBackup" style="color: gray; margin-top: 10px;"></p>
-
-  <input type="text" id="searchInput" placeholder="날짜(YYYY-MM-DD) 또는 키워드 검색" oninput="renderNoteList()" />
+  <p id="lastBackup"></p>
+  <input type="text" id="searchInput" placeholder="날짜 또는 키워드 검색" oninput="renderNoteList()" />
 
   <div id="restoreBox" style="display:none;">
     <input type="file" id="fileInput" accept=".json" /><br>
@@ -75,26 +70,23 @@
       }
     }
 
-    function formatDate(d) {
-      return d.toISOString().split('T')[0] + "_" + d.toTimeString().split(' ')[0].replace(/:/g, "-");
+    function renderLastBackup() {
+      const lastBackup = localStorage.getItem("lastBackupDate");
+      document.getElementById("lastBackup").textContent = lastBackup
+        ? "📁 마지막 백업 날짜: " + lastBackup
+        : "";
     }
 
-    function backupNotes() {
+    function backupToNewTab() {
       const notes = getNotes();
       const data = JSON.stringify(notes, null, 2);
       const now = new Date();
-      const filename = "memo-backup-" + formatDate(now) + ".json";
-
-      const blob = new Blob([data], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
-
       localStorage.setItem("lastBackupDate", now.toLocaleString());
       renderLastBackup();
+
+      const newWindow = window.open();
+      newWindow.document.write("<pre>" + data + "</pre>");
+      newWindow.document.title = "Memo Backup";
     }
 
     function toggleRestore() {
@@ -128,13 +120,6 @@
       reader.readAsText(file);
     }
 
-    function renderLastBackup() {
-      const lastBackup = localStorage.getItem("lastBackupDate");
-      document.getElementById("lastBackup").textContent = lastBackup
-        ? "📁 마지막 백업 날짜: " + lastBackup
-        : "";
-    }
-
     function renderNoteList() {
       const keyword = document.getElementById("searchInput").value.toLowerCase();
       const noteListElem = document.getElementById("noteList");
@@ -147,7 +132,7 @@
           const li = document.createElement("li");
           const link = document.createElement("a");
           link.href = "view.html?id=" + note.id;
-          link.textContent = note.timestamp + " - " + note.content.slice(0, 20) + "...";
+          link.textContent = (note.timestamp || "") + " - " + note.content.slice(0, 20) + "...";
           li.appendChild(link);
 
           if (note.updated) {
