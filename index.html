@@ -1,11 +1,12 @@
+
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>📋 메모 목록 - iOS 백업 호환</title>
+  <title>📋 메모 목록</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { font-family: sans-serif; padding: 20px; }
+    body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
     ul { padding-left: 0; list-style: none; }
     li {
       padding: 10px;
@@ -13,6 +14,7 @@
       margin-bottom: 8px;
       border-radius: 5px;
       position: relative;
+      background: #fff;
     }
     a { text-decoration: none; color: black; display: block; }
     a:hover { background-color: #f0f0f0; }
@@ -28,28 +30,51 @@
       margin-right: 6px;
     }
     #lastBackup {
-      color: gray;
+      color: #555;
       font-size: 0.9em;
+      margin-top: 6px;
+    }
+    .notice {
+      background: #fff3cd;
+      border: 1px solid #ffeeba;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 0.95em;
+      transition: opacity 1s ease;
+    }
+    .fade-out {
+      opacity: 0;
     }
   </style>
 </head>
 <body>
-  <h2>📋 저장된 메모 목록</h2>
+  <h2>📋 나만의 메모앱</h2>
+  <div class="notice" id="noticeBox">
+    🔄 백업 버튼을 누르면 <strong>백업 내용이 자동 복사되며</strong><br>
+    iOS에서는 <strong>하단 공유 버튼 → '파일에 저장'</strong>을 선택하세요.
+  </div>
+
   <button onclick="location.href='write.html'">➕ 새 메모 작성</button>
-  <button onclick="backupToNewTab()">🔄 백업 (iOS 호환)</button>
-  <button onclick="toggleRestore()">📥 복원 (파일 업로드)</button>
+  <button onclick="backupToNewTab()">🔄 백업</button>
+  <button onclick="toggleRestore()">📥 복원</button>
 
   <p id="lastBackup"></p>
   <input type="text" id="searchInput" placeholder="날짜 또는 키워드 검색" oninput="renderNoteList()" />
 
   <div id="restoreBox" style="display:none;">
-    <input type="file" id="fileInput" accept=".json" /><br>
+    <input type="file" id="fileInput" /><br>
     <button onclick="uploadAndRestore()">복원 실행</button>
   </div>
 
   <ul id="noteList"></ul>
 
   <script>
+    setTimeout(() => {
+      const box = document.getElementById("noticeBox");
+      if (box) box.classList.add("fade-out");
+    }, 10000);
+
     function getNotes() {
       return JSON.parse(localStorage.getItem("noteList")) || [];
     }
@@ -73,7 +98,7 @@
     function renderLastBackup() {
       const lastBackup = localStorage.getItem("lastBackupDate");
       document.getElementById("lastBackup").textContent = lastBackup
-        ? "📁 마지막 백업 날짜: " + lastBackup
+        ? "📁 마지막 백업: " + lastBackup
         : "";
     }
 
@@ -83,10 +108,7 @@
       const now = new Date();
       localStorage.setItem("lastBackupDate", now.toLocaleString());
       renderLastBackup();
-
-      const newWindow = window.open();
-      newWindow.document.write("<pre>" + data + "</pre>");
-      newWindow.document.title = "Memo Backup";
+      const newWindow = window.open("backup.html?data=" + encodeURIComponent(data), "_blank");
     }
 
     function toggleRestore() {
